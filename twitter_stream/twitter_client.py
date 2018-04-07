@@ -34,8 +34,7 @@ class TwitterClient(object):
         except tweepy.TweepError as e:
             print('ERROR! {}'.format(e))
 
-    def stream_tweets(self, stream_listener_class, filter=[], total_tweets=1000):
-        listener = stream_listener_class()
+    def stream_tweets(self, listener, filter=[]):
         stream = tweepy.Stream(self.auth, listener)
         if filter:
             stream.filter(track=filter)
