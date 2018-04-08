@@ -2,5 +2,6 @@ __pycache__/
 .cache/
 .secrets/
 .terraform/
+.env/
 *.log
 *.zip
