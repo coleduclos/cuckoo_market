@@ -1,9 +1,15 @@
 # Cuckoo Market
-## Query Tweets
+## Twitter Stream
 ```
-python3 cuckoo_market.py query --twitter_creds ~/.secrets/cuckoo_market.json
+python3 twitter_stream_main.py stream \
+    --twitter_creds $TWITTER_CREDS_FILE \
+    --total_tweets 10 \
+    --pubsub_topic projects/$PROJECT_ID/topics/$PUBSUB_TOPIC
 ```
-## Stream Tweets
+## Dataflow
 ```
-python3 cuckoo_market.py stream --twitter_creds ~/.secrets/cuckoo_market.json
+python2 twitter_sentiment_bq.py \
+    --project $PROJECT_ID \
+    --subscription projects/$PROJECT_ID/subscriptions/$PUBSUB_SUBSCRIPTION \
+    --dataset $BIGQUERY_DATASET
 ```
