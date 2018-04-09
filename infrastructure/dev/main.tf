@@ -1,3 +1,7 @@
+module "bigquery" {
+    source = "../modules/bigquery"
+}
+
 module "gcs" {
     source = "../modules/gcs"
 }

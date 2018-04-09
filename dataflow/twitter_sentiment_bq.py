@@ -21,8 +21,9 @@ class ParseTweetsFn(beam.DoFn):
     def process(self, elem):
         try:
             tweets = json.loads(base64.urlsafe_b64decode(elem).decode('utf-8'))
-            logging.debug('Parsed {} tweets: '.format(len(tweets['messages']), tweets))
+
             output = [ json.loads(tweet['data']) for tweet in tweets['messages'] ]
+            logging.debug('Parsed {} tweets: '.format(len(output), output))
             yield output
 
         except Exception as e:
@@ -51,7 +52,7 @@ class CleanTweetsFn(beam.DoFn):
             yield elem
 
         except Exception as e:
-            # Log and count parse errors
+            # Log and count clean errors
             self.num_clean_errors.inc()
             logging.error('Exception: {}'.format(e))
             logging.error('Clean error on "%s"', elem)
@@ -64,7 +65,6 @@ class AnalyzeSentimentFn(beam.DoFn):
     def process(self, elem):
         try:
             language_client = language.LanguageServiceClient()
-            print('AnalyzeSentimentFn')
             for tweet in elem:
                 tweet_document = language.types.Document(
                     content=tweet['text'],
@@ -76,10 +76,38 @@ class AnalyzeSentimentFn(beam.DoFn):
             yield elem
 
         except Exception as e:
-            # Log and count parse errors
+            # Log and count sentiment errors
             self.num_sentiment_errors.inc()
             logging.error('Exception: {}'.format(e))
             logging.error('Sentiment error on "%s"', elem)
+
+class WriteToBigQuery(beam.PTransform):
+    """Generate, format, and write BigQuery table row information."""
+    def __init__(self, table_name, dataset, schema):
+        """Initializes the transform.
+        Args:
+          table_name: Name of the BigQuery table to use.
+          dataset: Name of the dataset to use.
+          schema: Dictionary in the format {'column_name': 'bigquery_type'}
+        """
+        super(WriteToBigQuery, self).__init__()
+        self.table_name = table_name
+        self.dataset = dataset
+        self.schema = schema
+
+    def get_schema(self):
+        """Build the output table schema."""
+        return ', '.join(
+            '{}:{}'.format(col, self.schema[col]) for col in self.schema)
+
+    def expand(self, pcoll):
+        project = pcoll.pipeline.options.view_as(GoogleCloudOptions).project
+        return (
+            pcoll
+            | 'ConvertAndYieldRow' >> beam.ParDo(
+                lambda elem: [(yield {col : tweet[col]}) for tweet in elem for col in self.schema])
+            | beam.io.WriteToBigQuery(
+                self.table_name, self.dataset, project, self.get_schema()))
 
 def run(argv=None):
     """Main entry point; defines and runs the hourly_team_score pipeline."""
@@ -118,7 +146,13 @@ def run(argv=None):
             | 'ParseTweetsFn' >> beam.ParDo(ParseTweetsFn())
             | 'FilterTweetsFn' >> beam.ParDo(FilterTweetsFn(languages_supported=google_languages_supported))
             | 'CleanTweetsFn' >> beam.ParDo(CleanTweetsFn())
-            | 'AnalyzeSentimentFn' >> beam.ParDo(AnalyzeSentimentFn()))
+            | 'AnalyzeSentimentFn' >> beam.ParDo(AnalyzeSentimentFn())
+            | 'WriteToBigQuery' >> WriteToBigQuery(args.table_name,
+                args.dataset, {
+                    'text' : 'STRING',
+                    'sentiment_score' : 'FLOAT',
+                    'sentiment_magnitude' : 'FLOAT'
+                }))
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)

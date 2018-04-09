@@ -8,7 +8,7 @@ python3 twitter_stream_main.py stream \
 ```
 ## Dataflow
 ```
-python2 twitter_sentiment_bq.py \
+python twitter_sentiment_bq.py \
     --project $PROJECT_ID \
     --subscription projects/$PROJECT_ID/subscriptions/$PUBSUB_SUBSCRIPTION \
     --dataset $BIGQUERY_DATASET
