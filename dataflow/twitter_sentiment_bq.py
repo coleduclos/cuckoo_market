@@ -21,7 +21,6 @@ class ParseTweetsFn(beam.DoFn):
     def process(self, elem):
         try:
             tweets = json.loads(base64.urlsafe_b64decode(elem).decode('utf-8'))
-
             output = [ json.loads(tweet['data']) for tweet in tweets['messages'] ]
             logging.debug('Parsed {} tweets: '.format(len(output), output))
             yield output
@@ -81,6 +80,17 @@ class AnalyzeSentimentFn(beam.DoFn):
             logging.error('Exception: {}'.format(e))
             logging.error('Sentiment error on "%s"', elem)
 
+class ConvertBigQueryRowFn(beam.DoFn):
+    def __init__(self, schema):
+        super(ConvertBigQueryRowFn, self).__init__()
+        self.schema = schema
+    def process(self, elem):
+        for tweet in elem:
+            output = {}
+            for col in self.schema:
+                output[col] = tweet[col]
+            yield output
+
 class WriteToBigQuery(beam.PTransform):
     """Generate, format, and write BigQuery table row information."""
     def __init__(self, table_name, dataset, schema):
@@ -104,8 +114,7 @@ class WriteToBigQuery(beam.PTransform):
         project = pcoll.pipeline.options.view_as(GoogleCloudOptions).project
         return (
             pcoll
-            | 'ConvertAndYieldRow' >> beam.ParDo(
-                lambda elem: [(yield {col : tweet[col]}) for tweet in elem for col in self.schema])
+            | 'ConvertBigQueryRowFn' >> beam.ParDo(ConvertBigQueryRowFn(self.schema))
             | beam.io.WriteToBigQuery(
                 self.table_name, self.dataset, project, self.get_schema()))
 
@@ -149,9 +158,13 @@ def run(argv=None):
             | 'AnalyzeSentimentFn' >> beam.ParDo(AnalyzeSentimentFn())
             | 'WriteToBigQuery' >> WriteToBigQuery(args.table_name,
                 args.dataset, {
+                    'id' : 'INTEGER',
                     'text' : 'STRING',
                     'sentiment_score' : 'FLOAT',
-                    'sentiment_magnitude' : 'FLOAT'
+                    'sentiment_magnitude' : 'FLOAT',
+                    'favorite_count' : 'INTEGER',
+                    'retweet_count' : 'INTEGER',
+                    'lang' : 'STRING'
                 }))
 
 if __name__ == '__main__':
