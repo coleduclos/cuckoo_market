@@ -1,5 +1,6 @@
 import argparse
 import base64
+from datetime import datetime
 import json
 import logging
 import re
@@ -88,7 +89,11 @@ class ConvertBigQueryRowFn(beam.DoFn):
         for tweet in elem:
             output = {}
             for col in self.schema:
-                output[col] = tweet[col]
+                if self.schema[col] == 'DATETIME':
+                    # Convert YYYY-MM-DDTHH:MM:SS
+                    output[col] = datetime.strptime(tweet[col], '%a %b %d %X +0000 %Y').strftime('%Y-%m-%dT%X')
+                else:
+                    output[col] = tweet[col]
             yield output
 
 class WriteToBigQuery(beam.PTransform):
@@ -159,6 +164,7 @@ def run(argv=None):
             | 'WriteToBigQuery' >> WriteToBigQuery(args.table_name,
                 args.dataset, {
                     'id' : 'INTEGER',
+                    'created_at' : 'DATETIME',
                     'text' : 'STRING',
                     'sentiment_score' : 'FLOAT',
                     'sentiment_magnitude' : 'FLOAT',
