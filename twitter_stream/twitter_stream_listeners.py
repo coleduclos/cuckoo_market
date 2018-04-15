@@ -50,7 +50,7 @@ class StdOutListener(StreamListener):
     def __init__(self, total_tweets=1000):
         super()
         self.count = 0
-        self.total_tweets = total_tweets
+        self.total_tweets = int(total_tweets)
 
     def on_data(self, data):
         print(data)

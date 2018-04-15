@@ -6,23 +6,16 @@ from twitter_stream_listeners import StdOutListener
 
 twitter_filter = 'Google'
 
-def query(args):
+def query(args, listener):
     twitter_client = TwitterClient(creds_file=args.twitter_creds)
     tweets = twitter_client.query_tweets(query=twitter_filter,
         count=args.total_tweets)
     for tweet in tweets:
-        print(tweet.text)
+        listener.on_data(json.dumps(tweet._json))
     print('Returned Tweets: {}'.format(len(tweets)))
 
-def stream(args):
+def stream(args, listener):
     twitter_client = TwitterClient(creds_file=args.twitter_creds)
-    if args.pubsub_topic:
-        print('Streaming Tweets to {}...'.format(args.pubsub_topic))
-        listener = PubSubListener(args.pubsub_topic,
-            total_tweets=args.total_tweets)
-    else:
-        print('Streaming Tweets to Standard Out...')
-        listener = StdOutListener(total_tweets=args.total_tweets)
     twitter_client.stream_tweets(listener,
         filter=[twitter_filter])
 
@@ -38,6 +31,8 @@ def main():
     query_parser.add_argument('--total_tweets',
             default=1000,
             help='Total number of tweets to query.')
+    query_parser.add_argument('--pubsub_topic',
+            help='The Pub/Sub topic to send queried Tweets to.')
     stream_parser.add_argument('--pubsub_topic',
             help='The Pub/Sub topic to stream Tweets to.')
     stream_parser.add_argument('--twitter_creds',
@@ -50,8 +45,17 @@ def main():
     query_parser.set_defaults(func=query)
     stream_parser.set_defaults(func=stream)
     args = parser.parse_args()
-    args.func(args)
 
+    # Set the listener based on pubsub_topic
+    if args.pubsub_topic:
+        print('Sending Tweets to {}...'.format(args.pubsub_topic))
+        listener = PubSubListener(args.pubsub_topic,
+            total_tweets=args.total_tweets)
+    else:
+        print('Sending Tweets to Standard Out...')
+        listener = StdOutListener(total_tweets=args.total_tweets)
+
+    args.func(args, listener)
     print('Finished!')
 
 if __name__ == '__main__':
