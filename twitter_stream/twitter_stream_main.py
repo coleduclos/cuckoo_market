@@ -30,6 +30,7 @@ def main():
             help='File containing twitter credentials.')
     query_parser.add_argument('--total_tweets',
             default=1000,
+            type=int,
             help='Total number of tweets to query.')
     query_parser.add_argument('--pubsub_topic',
             help='The Pub/Sub topic to send queried Tweets to.')

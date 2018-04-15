@@ -24,7 +24,7 @@ class PubSubListener(StreamListener):
             self.write_to_pubsub(self.tweets)
             self.tweets = []
         self.count += 1
-        if self.count > self.total_tweets:
+        if self.count >= self.total_tweets:
             if len(self.tweets) > 0:
                 self.write_to_pubsub(self.tweets)
             return False
@@ -50,7 +50,7 @@ class StdOutListener(StreamListener):
     def __init__(self, total_tweets=1000):
         super()
         self.count = 0
-        self.total_tweets = int(total_tweets)
+        self.total_tweets = total_tweets
 
     def on_data(self, data):
         print(data)
