@@ -32,6 +32,14 @@ class PubSubListener(StreamListener):
             print('count is: {} at {}'.format(self.count, datetime.datetime.now()))
         return True
 
+    def flush_buffer(self):
+        if len(self.tweets) > 0:
+            self.write_to_pubsub(self.tweets)
+            self.tweets = []
+            return True
+        else:
+            return False
+
     def on_error(self, status):
         print('ERROR: {}'.format(status))
 

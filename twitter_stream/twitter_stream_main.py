@@ -12,6 +12,8 @@ def query(args, listener):
         count=args.total_tweets)
     for tweet in tweets:
         listener.on_data(json.dumps(tweet._json))
+    # Flush any remaining tweets in the buffer
+    listener.flush_buffer()
     print('Returned Tweets: {}'.format(len(tweets)))
 
 def stream(args, listener):

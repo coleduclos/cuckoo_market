@@ -7,12 +7,78 @@ import re
 import sys
 
 import apache_beam as beam
+from apache_beam.io.gcp.internal.clients import bigquery
 from apache_beam.metrics.metric import Metrics
 from apache_beam.options.pipeline_options import GoogleCloudOptions
 from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.options.pipeline_options import StandardOptions
 
 from google.cloud import language
+
+twitter_schema = [
+    {
+        'name' : 'id',
+        'type' : 'INTEGER',
+        'mode' : 'REQUIRED'
+    },
+    {
+        'name' : 'created_at',
+        'type' : 'DATETIME',
+        'mode' : 'REQUIRED'
+    },
+    {
+        'name' : 'text',
+        'type' : 'STRING',
+        'mode' : 'NULLABLE'
+    },
+    {
+        'name' : 'sentiment_score',
+        'type' : 'FLOAT',
+        'mode' : 'REQUIRED'
+    },
+    {
+        'name' : 'sentiment_magnitude',
+        'type' : 'FLOAT',
+        'mode' : 'REQUIRED'
+    },
+    {
+        'name' : 'favorite_count',
+        'type' : 'INTEGER',
+        'mode' : 'NULLABLE'
+    },
+    {
+        'name' : 'retweet_count',
+        'type' : 'INTEGER',
+        'mode' : 'NULLABLE'
+    },
+    {
+        'name' : 'lang',
+        'type' : 'STRING',
+        'mode' : 'REQUIRED'
+    },
+    {
+        'name' : 'user',
+        'type' : 'RECORD',
+        'mode' : 'REQUIRED',
+        'fields': [
+            {
+                'name': 'id',
+                'type': 'INTEGER',
+                'mode': 'REQUIRED'
+            },
+            {
+                'name': 'followers_count',
+                'type': 'INTEGER',
+                'mode': 'REQUIRED'
+            },
+            {
+                'name': 'friends_count',
+                'type': 'INTEGER',
+                'mode': 'REQUIRED'
+            }
+        ]
+    }
+]
 
 class ParseTweetsFn(beam.DoFn):
     def __init__(self):
@@ -85,16 +151,23 @@ class ConvertBigQueryRowFn(beam.DoFn):
     def __init__(self, schema):
         super(ConvertBigQueryRowFn, self).__init__()
         self.schema = schema
+
     def process(self, elem):
         for tweet in elem:
-            output = {}
-            for col in self.schema:
-                if self.schema[col] == 'DATETIME':
-                    # Convert YYYY-MM-DDTHH:MM:SS
-                    output[col] = datetime.strptime(tweet[col], '%a %b %d %X +0000 %Y').strftime('%Y-%m-%dT%X')
-                else:
-                    output[col] = tweet[col]
-            yield output
+            yield self.convert(self.schema, tweet)
+
+    def convert(self, schema, tweet):
+        output = {}
+        for field in schema:
+            column = field['name']
+            if field['type'] == 'DATETIME':
+                # Convert YYYY-MM-DDTHH:MM:SS
+                output[column] = datetime.strptime(tweet[column], '%a %b %d %X +0000 %Y').strftime('%Y-%m-%dT%X')
+            elif field['type'] == 'RECORD':
+                output[column] = self.convert(field['fields'], tweet[column])
+            else:
+                output[column] = tweet[column]
+        return output
 
 class WriteToBigQuery(beam.PTransform):
     """Generate, format, and write BigQuery table row information."""
@@ -110,10 +183,23 @@ class WriteToBigQuery(beam.PTransform):
         self.dataset = dataset
         self.schema = schema
 
-    def get_schema(self):
-        """Build the output table schema."""
-        return ', '.join(
-            '{}:{}'.format(col, self.schema[col]) for col in self.schema)
+    def get_bq_table_schema(self):
+        table_schema = bigquery.TableSchema()
+        for field in self.schema:
+            field_schema = self.get_bq_field_schema(field)
+            table_schema.fields.append(field_schema)
+        return table_schema
+
+    def get_bq_field_schema(self, field):
+        field_schema = bigquery.TableFieldSchema()
+        field_schema.name = field['name']
+        field_schema.type = field['type']
+        field_schema.mode = field['mode']
+        if field['type'] == 'RECORD':
+            for nested_field in field['fields']:
+                nested_field_schema = self.get_bq_field_schema(nested_field)
+                field_schema.fields.append(nested_field_schema)
+        return field_schema
 
     def expand(self, pcoll):
         project = pcoll.pipeline.options.view_as(GoogleCloudOptions).project
@@ -121,7 +207,7 @@ class WriteToBigQuery(beam.PTransform):
             pcoll
             | 'ConvertBigQueryRowFn' >> beam.ParDo(ConvertBigQueryRowFn(self.schema))
             | beam.io.WriteToBigQuery(
-                self.table_name, self.dataset, project, self.get_schema()))
+                self.table_name, self.dataset, project, self.get_bq_table_schema()))
 
 def run(argv=None):
     """Main entry point; defines and runs the hourly_team_score pipeline."""
@@ -162,16 +248,7 @@ def run(argv=None):
             | 'CleanTweetsFn' >> beam.ParDo(CleanTweetsFn())
             | 'AnalyzeSentimentFn' >> beam.ParDo(AnalyzeSentimentFn())
             | 'WriteToBigQuery' >> WriteToBigQuery(args.table_name,
-                args.dataset, {
-                    'id' : 'INTEGER',
-                    'created_at' : 'DATETIME',
-                    'text' : 'STRING',
-                    'sentiment_score' : 'FLOAT',
-                    'sentiment_magnitude' : 'FLOAT',
-                    'favorite_count' : 'INTEGER',
-                    'retweet_count' : 'INTEGER',
-                    'lang' : 'STRING'
-                }))
+                args.dataset, twitter_schema))
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
