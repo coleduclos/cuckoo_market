@@ -52,7 +52,7 @@ class WriteToGCS(beam.PTransform):
             | beam.io.WriteToText(
                 file_path_prefix=file_path_prefix,
                 file_name_suffix='json',
-                append_trailing_newlines=False))
+                append_trailing_newlines=True))
 
 def run(argv=None):
     """Main entry point; defines and runs the hourly_team_score pipeline."""
