@@ -71,3 +71,6 @@ class StdOutListener(StreamListener):
 
     def on_error(self, status):
         print('ERROR: {}'.format(status))
+
+    def flush_buffer(self):
+        return False

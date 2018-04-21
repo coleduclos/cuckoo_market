@@ -24,8 +24,10 @@ class TwitterClient(object):
         except:
             print('ERROR! Authentication Failed...')
 
-    def query_tweets(self, query, count=10):
+    def query_tweets(self, filter, count=10):
         try:
+            # transform filter list to query string
+            query = self.transform_filter_to_query(filter)
             # call twitter api to fetch tweets
             tweets = self.api.search(q=query, count=count)
             # return parsed tweets
@@ -40,3 +42,7 @@ class TwitterClient(object):
             stream.filter(track=filter)
         else:
             stream.sample()
+
+    def transform_filter_to_query(self, filter):
+        output = ' OR '.join(filter)
+        return output

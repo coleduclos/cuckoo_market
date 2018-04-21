@@ -4,11 +4,34 @@ from twitter_client import TwitterClient
 from twitter_stream_listeners import PubSubListener
 from twitter_stream_listeners import StdOutListener
 
-twitter_filter = 'Google'
+stock_map = {
+    'tesla' : {
+        'ticker' : 'TSLA',
+        'filter' : [
+            'TSLA',
+            'Elon Musk',
+            'Tesla',
+            '@elonmusk',
+            'Model 3'
+        ]
+    },
+    'amazon' : {
+        'ticker' : 'AMZN',
+        'filter' : [
+            'AMZN',
+            'Amazon',
+            'Jeff Bezos',
+            '@JeffBezos',
+            'AWS'
+        ]
+    }
+}
 
 def query(args, listener):
     twitter_client = TwitterClient(creds_file=args.twitter_creds)
-    tweets = twitter_client.query_tweets(query=twitter_filter,
+    filter = stock_map[args.stock.lower()]['filter']
+    print('Querying Tweets related to {}... \nUsing filter: {}'.format(args.stock, filter))
+    tweets = twitter_client.query_tweets(filter=filter,
         count=args.total_tweets)
     for tweet in tweets:
         listener.on_data(json.dumps(tweet._json))
@@ -18,8 +41,10 @@ def query(args, listener):
 
 def stream(args, listener):
     twitter_client = TwitterClient(creds_file=args.twitter_creds)
+    filter = stock_map[args.stock.lower()]['filter']
+    print('Streaming Tweets related to {}... \nUsing filter: {}'.format(args.stock, filter))
     twitter_client.stream_tweets(listener,
-        filter=[twitter_filter])
+        filter=filter)
 
 def main():
     print('Starting the main script')
@@ -27,6 +52,10 @@ def main():
     subparsers = parser.add_subparsers(help='sub-command help')
     query_parser = subparsers.add_parser('query', help='query help')
     stream_parser = subparsers.add_parser('stream', help='stream help')
+    query_parser.add_argument('--stock',
+            required=True,
+            choices=stock_map.keys(),
+            help='Stock used to filter tweets.')
     query_parser.add_argument('--twitter_creds',
             required=True,
             help='File containing twitter credentials.')
@@ -36,6 +65,10 @@ def main():
             help='Total number of tweets to query.')
     query_parser.add_argument('--pubsub_topic',
             help='The Pub/Sub topic to send queried Tweets to.')
+    stream_parser.add_argument('--stock',
+            required=True,
+            choices=stock_map.keys(),
+            help='Stock used to filter tweets.')
     stream_parser.add_argument('--pubsub_topic',
             help='The Pub/Sub topic to stream Tweets to.')
     stream_parser.add_argument('--twitter_creds',
