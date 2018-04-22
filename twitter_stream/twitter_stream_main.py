@@ -86,6 +86,7 @@ def main():
     if args.pubsub_topic:
         print('Sending Tweets to {}...'.format(args.pubsub_topic))
         listener = PubSubListener(args.pubsub_topic,
+            label=args.stock,
             total_tweets=args.total_tweets)
     else:
         print('Sending Tweets to Standard Out...')

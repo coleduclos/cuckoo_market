@@ -57,6 +57,11 @@ twitter_schema = [
         'mode' : 'REQUIRED'
     },
     {
+        'name' : 'label',
+        'type' : 'STRING',
+        'mode' : 'REQUIRED'
+    },
+    {
         'name' : 'user',
         'type' : 'RECORD',
         'mode' : 'REQUIRED',
@@ -88,8 +93,13 @@ class ParseTweetsFn(beam.DoFn):
     def process(self, elem):
         try:
             tweets = json.loads(base64.urlsafe_b64decode(elem).decode('utf-8'))
-            output = [ json.loads(tweet['data']) for tweet in tweets['messages'] ]
-            logging.debug('Parsed {} tweets: '.format(len(output), output))
+            label = tweets['label'] if 'label' in tweets and tweets['label'] else None 
+            output = []
+            for tweet in tweets['messages']:
+                message = json.loads(tweet['data'])
+                message['label'] = label
+                output.append(message)
+            logging.debug('Parsed {} tweets: {}'.format(len(output), output))
             yield output
 
         except Exception as e:

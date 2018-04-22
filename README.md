@@ -3,6 +3,7 @@
 ### Stream
 ```
 python3 twitter_stream_main.py stream \
+    --stock $STOCK \
     --twitter_creds $TWITTER_CREDS_FILE \
     --total_tweets 10 \
     --pubsub_topic projects/$PROJECT_ID/topics/$PUBSUB_TOPIC
@@ -10,6 +11,7 @@ python3 twitter_stream_main.py stream \
 ### Query
 ```
 python3 twitter_stream_main.py query \
+    --stock $STOCK \
     --twitter_creds $TWITTER_CREDS_FILE \
     --total_tweets 10 \
     --pubsub_topic projects/$PROJECT_ID/topics/$PUBSUB_TOPIC

@@ -7,11 +7,13 @@ from tweepy import StreamListener
 class PubSubListener(StreamListener):
     def __init__(self, pubsub_topic,
         batch_size=50,
+        label=None,
         num_retries=3,
         total_tweets=1000):
         super()
         self.batch_size = batch_size
         self.count = 0
+        self.label = label
         self.num_retries = num_retries
         self.pubsub_topic = pubsub_topic
         self.total_tweets = total_tweets
@@ -47,7 +49,8 @@ class PubSubListener(StreamListener):
         messages = []
         for data in data_list:
             messages.append({'data': data})
-        body = base64.urlsafe_b64encode(json.dumps({'messages': messages}).encode('utf-8'))
+        output = { 'messages' : messages, 'label' : self.label }
+        body = base64.urlsafe_b64encode(json.dumps(output).encode('utf-8'))
         response = self.pubsub_client.publish(self.pubsub_topic, body)
         return response
 
