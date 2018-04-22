@@ -33,11 +33,13 @@ def query(args, listener):
     print('Querying Tweets related to {}... \nUsing filter: {}'.format(args.stock, filter))
     tweets = twitter_client.query_tweets(filter=filter,
         count=args.total_tweets)
+    count = 0
     for tweet in tweets:
+        count += 1
         listener.on_data(json.dumps(tweet._json))
     # Flush any remaining tweets in the buffer
     listener.flush_buffer()
-    print('Returned Tweets: {}'.format(len(tweets)))
+    print('Returned Tweets: {}'.format(count))
 
 def stream(args, listener):
     twitter_client = TwitterClient(creds_file=args.twitter_creds)

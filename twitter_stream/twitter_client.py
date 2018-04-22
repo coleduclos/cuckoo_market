@@ -28,10 +28,8 @@ class TwitterClient(object):
         try:
             # transform filter list to query string
             query = self.transform_filter_to_query(filter)
-            # call twitter api to fetch tweets
-            tweets = self.api.search(q=query, count=count)
-            # return parsed tweets
-            return tweets
+            for tweets in tweepy.Cursor(self.api.search, q=query).items(count):
+                yield tweets
 
         except tweepy.TweepError as e:
             print('ERROR! {}'.format(e))
