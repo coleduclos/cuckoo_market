@@ -11,25 +11,6 @@ from apache_beam.options.pipeline_options import GoogleCloudOptions
 from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.options.pipeline_options import StandardOptions
 
-class ParseTweetsFn(beam.DoFn):
-    def __init__(self):
-        super(ParseTweetsFn, self).__init__()
-        self.num_parse_errors = Metrics.counter(self.__class__, 'num_parse_errors')
-
-    def process(self, elem):
-        try:
-            tweets = json.loads(base64.urlsafe_b64decode(elem).decode('utf-8'))
-            output = [ json.loads(tweet['data']) for tweet in tweets['messages'] ]
-            logging.debug('Parsed {} tweets: '.format(len(output), output))
-            output = json.dumps(output)
-            yield output
-
-        except Exception as e:
-            # Log and count parse errors
-            self.num_parse_errors.inc()
-            logging.error('Exception: {}'.format(e))
-            logging.error('Parse error on "%s"', elem)
-
 class WriteToGCS(beam.PTransform):
     """Generate, format, and write BigQuery table row information."""
     def __init__(self, output):
@@ -83,7 +64,6 @@ def run(argv=None):
         raw_tweets = (
             pipeline
             | 'ReadPubSub' >> beam.io.gcp.pubsub.ReadStringsFromPubSub(subscription=args.subscription)
-            | 'ParseTweetsFn' >> beam.ParDo(ParseTweetsFn())
             | 'WriteToGCS' >> WriteToGCS(args.output))
 
 if __name__ == '__main__':
