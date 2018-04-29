@@ -31,3 +31,7 @@ python twitter_sentiment_gcs.py \
     --subscription projects/$PROJECT_ID/subscriptions/$PUBSUB_SUBSCRIPTION_GCS \
     --output $GCS_PREFIX
 ```
+## Kubernetes Setup
+```
+kubectl create secret generic twitter --from-file=$TWITTER_CREDS_FILE
+```
