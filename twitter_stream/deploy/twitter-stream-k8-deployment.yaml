@@ -17,7 +17,7 @@ spec:
       volumes:
       - name: twitter
         secret:
-          secretName: twitter-credentials.json
+          secretName: twitter
       containers:
       - name: twitter-stream
         image: coleduclos/twitter-stream:test
