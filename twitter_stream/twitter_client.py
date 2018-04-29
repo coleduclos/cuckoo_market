@@ -2,7 +2,9 @@ import json
 import tweepy
 
 class TwitterClient(object):
-    def __init__(self, creds_file=None):
+    def __init__(self, creds_file=None,
+        wait_on_rate_limit=True,
+        wait_on_rate_limit_notify=True):
         if creds_file:
             creds_obj = json.load(open(creds_file))
             access_token = creds_obj['access_token']
@@ -20,7 +22,9 @@ class TwitterClient(object):
             # set access token and secret
             self.auth.set_access_token(access_token, access_token_secret)
             # create tweepy API object to fetch tweets
-            self.api = tweepy.API(self.auth)
+            self.api = tweepy.API(self.auth,
+                wait_on_rate_limit=wait_on_rate_limit,
+                wait_on_rate_limit_notify=wait_on_rate_limit_notify)
         except:
             print('ERROR! Authentication Failed...')
 
