@@ -24,6 +24,15 @@ python twitter_sentiment_bq.py \
     --subscription projects/$PROJECT_ID/subscriptions/$PUBSUB_SUBSCRIPTION_BQ \
     --dataset $BIGQUERY_DATASET
 ```
+```
+python twitter_sentiment_bq.py \
+    --project $PROJECT_ID \
+    --subscription projects/$PROJECT_ID/subscriptions/$PUBSUB_SUBSCRIPTION_BQ \
+    --dataset $BIGQUERY_DATASET \
+    --runner DataflowRunner \
+    --staging_location $DATAFLOW_GCS_STAGING \
+    --temp_location $DATAFLOW_GCS_TEMP
+```
 ### Google Cloud Storage
 ```
 python twitter_sentiment_gcs.py \
