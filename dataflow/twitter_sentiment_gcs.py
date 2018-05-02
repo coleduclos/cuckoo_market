@@ -1,12 +1,9 @@
 import argparse
-import base64
 from datetime import datetime
-import json
 import logging
 import sys
 
 import apache_beam as beam
-from apache_beam.metrics.metric import Metrics
 from apache_beam.options.pipeline_options import GoogleCloudOptions
 from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.options.pipeline_options import StandardOptions
