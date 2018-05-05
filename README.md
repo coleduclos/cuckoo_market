@@ -30,6 +30,7 @@ python twitter_sentiment_bq.py \
     --subscription projects/$PROJECT_ID/subscriptions/$PUBSUB_SUBSCRIPTION_BQ \
     --dataset $BIGQUERY_DATASET \
     --runner DataflowRunner \
+    --requirements_file requirements.txt \
     --staging_location $DATAFLOW_GCS_STAGING \
     --temp_location $DATAFLOW_GCS_TEMP
 ```

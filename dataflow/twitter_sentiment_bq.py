@@ -1,9 +1,5 @@
 import argparse
-import base64
-from datetime import datetime
-import json
 import logging
-import re
 import sys
 
 import apache_beam as beam
@@ -12,8 +8,6 @@ from apache_beam.metrics.metric import Metrics
 from apache_beam.options.pipeline_options import GoogleCloudOptions
 from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.options.pipeline_options import StandardOptions
-
-from google.cloud import language
 
 twitter_schema = [
     {
@@ -91,9 +85,12 @@ class ParseTweetsFn(beam.DoFn):
         self.num_parse_errors = Metrics.counter(self.__class__, 'num_parse_errors')
 
     def process(self, elem):
+        import base64
+        import json
         try:
-            tweets = json.loads(base64.urlsafe_b64decode(elem).decode('utf-8'))
-            label = tweets['label'] if 'label' in tweets and tweets['label'] else None 
+            elem_decoded = base64.urlsafe_b64decode(str(elem)).decode('utf-8')
+            tweets = json.loads(elem_decoded)
+            label = tweets['label'] if 'label' in tweets and tweets['label'] else None
             output = []
             for tweet in tweets['messages']:
                 message = json.loads(tweet['data'])
@@ -122,6 +119,7 @@ class CleanTweetsFn(beam.DoFn):
         self.num_clean_errors = Metrics.counter(self.__class__, 'num_clean_errors')
 
     def process(self, elem):
+        import re
         try:
             for tweet in elem:
                 tweet['text'] = ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", tweet['text']).split())
@@ -139,6 +137,7 @@ class AnalyzeSentimentFn(beam.DoFn):
         self.num_sentiment_errors = Metrics.counter(self.__class__, 'num_sentiment_errors')
 
     def process(self, elem):
+        from google.cloud import language
         try:
             language_client = language.LanguageServiceClient()
             for tweet in elem:
@@ -167,6 +166,7 @@ class ConvertBigQueryRowFn(beam.DoFn):
             yield self.convert(self.schema, tweet)
 
     def convert(self, schema, tweet):
+        from datetime import datetime
         output = {}
         for field in schema:
             column = field['name']
