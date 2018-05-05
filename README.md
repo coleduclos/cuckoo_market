@@ -18,12 +18,14 @@ python3 twitter_stream_main.py query \
 ```
 ## Dataflow
 ### BigQuery
+#### DirectRunner
 ```
 python twitter_sentiment_bq.py \
     --project $PROJECT_ID \
     --subscription projects/$PROJECT_ID/subscriptions/$PUBSUB_SUBSCRIPTION_BQ \
     --dataset $BIGQUERY_DATASET
 ```
+#### DataflowRunner
 ```
 python twitter_sentiment_bq.py \
     --project $PROJECT_ID \
@@ -35,11 +37,22 @@ python twitter_sentiment_bq.py \
     --temp_location $DATAFLOW_GCS_TEMP
 ```
 ### Google Cloud Storage
+#### DirectRunner
 ```
 python twitter_sentiment_gcs.py \
     --project $PROJECT_ID \
     --subscription projects/$PROJECT_ID/subscriptions/$PUBSUB_SUBSCRIPTION_GCS \
     --output $GCS_PREFIX
+```
+#### DataflowRunner
+```
+python twitter_sentiment_gcs.py \
+    --project $PROJECT_ID \
+    --subscription projects/$PROJECT_ID/subscriptions/$PUBSUB_SUBSCRIPTION_GCS \
+    --output $GCS_PREFIX \
+    --runner DataflowRunner \
+    --staging_location $DATAFLOW_GCS_STAGING \
+    --temp_location $DATAFLOW_GCS_TEMP
 ```
 ## Kubernetes Setup
 ```
