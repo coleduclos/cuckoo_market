@@ -25,26 +25,26 @@ class TwitterClient(object):
             self.api = tweepy.API(self.auth,
                 wait_on_rate_limit=wait_on_rate_limit,
                 wait_on_rate_limit_notify=wait_on_rate_limit_notify)
-        except:
-            print('ERROR! Authentication Failed...')
+        except Exception as e:
+            print('ERROR! Authentication Failed... Exception:\n{}'.format(e))
 
-    def query_tweets(self, filter, count=10):
+    def query_tweets(self, tweet_filter, count=10):
         try:
             # transform filter list to query string
-            query = self.transform_filter_to_query(filter)
+            query = self.transform_filter_to_query(tweet_filter)
             for tweets in tweepy.Cursor(self.api.search, q=query).items(count):
                 yield tweets
 
         except tweepy.TweepError as e:
             print('ERROR! {}'.format(e))
 
-    def stream_tweets(self, listener, filter=[]):
+    def stream_tweets(self, listener, tweet_filter=[]):
         stream = tweepy.Stream(self.auth, listener)
-        if filter:
-            stream.filter(track=filter)
+        if tweet_filter:
+            stream.filter(track=tweet_filter)
         else:
             stream.sample()
 
-    def transform_filter_to_query(self, filter):
-        output = ' OR '.join(filter)
+    def transform_filter_to_query(self, tweet_filter):
+        output = ' OR '.join(tweet_filter)
         return output

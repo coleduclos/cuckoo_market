@@ -29,9 +29,9 @@ stock_map = {
 
 def query(args, listener):
     twitter_client = TwitterClient(creds_file=args.twitter_creds)
-    filter = stock_map[args.stock.lower()]['filter']
-    print('Querying Tweets related to {}... \nUsing filter: {}'.format(args.stock, filter))
-    tweets = twitter_client.query_tweets(filter=filter,
+    tweet_filter = stock_map[args.stock.lower()]['filter']
+    print('Querying Tweets related to {}... \nUsing filter: {}'.format(args.stock, tweet_filter))
+    tweets = twitter_client.query_tweets(tweet_filter=tweet_filter,
         count=args.total_tweets)
     count = 0
     for tweet in tweets:
@@ -43,10 +43,10 @@ def query(args, listener):
 
 def stream(args, listener):
     twitter_client = TwitterClient(creds_file=args.twitter_creds)
-    filter = stock_map[args.stock.lower()]['filter']
-    print('Streaming Tweets related to {}... \nUsing filter: {}'.format(args.stock, filter))
+    tweet_filter = stock_map[args.stock.lower()]['filter']
+    print('Streaming Tweets related to {}... \nUsing filter: {}'.format(args.stock, tweet_filter))
     twitter_client.stream_tweets(listener,
-        filter=filter)
+        tweet_filter=tweet_filter)
 
 def main():
     print('Starting the main script')
