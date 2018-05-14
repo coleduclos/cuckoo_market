@@ -120,7 +120,7 @@ class ParseTweetsFn(beam.DoFn):
         import json
         try:
             output = []
-            for tweet in tweets['messages']:
+            for tweet in elem:
                 message = json.loads(tweet['data'])
                 message['label'] = tweet['label']
                 output.append(message)
