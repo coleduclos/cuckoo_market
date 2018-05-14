@@ -48,8 +48,8 @@ class PubSubListener(StreamListener):
     def write_to_pubsub(self, data_list):
         messages = []
         for data in data_list:
-            messages.append({'data': data})
-        output = { 'messages' : messages, 'label' : self.label }
+            messages.append({'data': data, 'label' : self.label })
+        output = { 'messages' : messages }
         body = base64.urlsafe_b64encode(json.dumps(output).encode('utf-8'))
         response = self.pubsub_client.publish(self.pubsub_topic, body)
         return response

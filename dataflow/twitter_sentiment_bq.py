@@ -9,7 +9,7 @@ from apache_beam.options.pipeline_options import GoogleCloudOptions
 from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.options.pipeline_options import StandardOptions
 
-twitter_schema = [
+twitter_sentiment_schema = [
     {
         'name' : 'id',
         'type' : 'INTEGER',
@@ -79,10 +79,23 @@ twitter_schema = [
     }
 ]
 
-class ParseTweetsFn(beam.DoFn):
+twitter_raw_schema = [
+    {
+        'name' : 'label',
+        'type' : 'STRING',
+        'mode' : 'REQUIRED'
+    },
+    {
+        'name' : 'data',
+        'type' : 'STRING',
+        'mode' : 'REQUIRED'
+    }
+]
+
+class ExtractRawTweetsFn(beam.DoFn):
     def __init__(self):
-        super(ParseTweetsFn, self).__init__()
-        self.num_parse_errors = Metrics.counter(self.__class__, 'num_parse_errors')
+        super(ExtractRawTweetsFn, self).__init__()
+        self.num_extract_errors = Metrics.counter(self.__class__, 'num_extract_errors')
 
     def process(self, elem):
         import base64
@@ -90,11 +103,26 @@ class ParseTweetsFn(beam.DoFn):
         try:
             elem_decoded = base64.urlsafe_b64decode(str(elem)).decode('utf-8')
             tweets = json.loads(elem_decoded)
-            label = tweets['label'] if 'label' in tweets and tweets['label'] else None
+            yield tweets.get('messages', [])
+
+        except Exception as e:
+            # Log and count parse errors
+            self.num_extract_errors.inc()
+            logging.error('Exception: {}'.format(e))
+            logging.error('Extract error on "%s"', elem)
+
+class ParseTweetsFn(beam.DoFn):
+    def __init__(self):
+        super(ParseTweetsFn, self).__init__()
+        self.num_parse_errors = Metrics.counter(self.__class__, 'num_parse_errors')
+
+    def process(self, elem):
+        import json
+        try:
             output = []
             for tweet in tweets['messages']:
                 message = json.loads(tweet['data'])
-                message['label'] = label
+                message['label'] = tweet['label']
                 output.append(message)
             logging.debug('Parsed {} tweets: {}'.format(len(output), output))
             yield output
@@ -239,6 +267,8 @@ def run(argv=None):
     args, pipeline_args = parser.parse_known_args(argv)
     options = PipelineOptions(pipeline_args)
     google_languages_supported = ['de', 'en', 'es', 'fr', 'it', 'ja', 'ko', 'pt', 'zh', 'zh-Hant']
+    raw_table_name = '{}_raw'.format(args.table_name)
+
     # We also require the --project option to access --dataset
     if options.view_as(GoogleCloudOptions).project is None:
         parser.print_usage()
@@ -249,16 +279,26 @@ def run(argv=None):
     options.view_as(StandardOptions).streaming = True
 
     with beam.Pipeline(options=options) as pipeline:
-        # Read events from Pub/Sub using custom timestamps
-        raw_tweets = (
+        # Read events from Pub/Sub and extract raw tweets
+        tweets_raw = (
             pipeline
             | 'ReadPubSub' >> beam.io.gcp.pubsub.ReadStringsFromPubSub(subscription=args.subscription)
+            | 'ExtractRawTweetsFn' >> beam.ParDo(ExtractRawTweetsFn()))
+        # Write raw tweets to BigQuery
+        tweets_raw_to_bq = (
+            tweets_raw
+            | 'WriteRawTweetsToBigQuery' >> WriteToBigQuery(raw_table_name,
+                args.dataset, twitter_raw_schema))
+        # Calculate sentiment of each tweet and write to BigQuery
+        tweets_sentiment = (
+            tweets_raw
             | 'ParseTweetsFn' >> beam.ParDo(ParseTweetsFn())
             | 'FilterTweetsFn' >> beam.ParDo(FilterTweetsFn(languages_supported=google_languages_supported))
             | 'CleanTweetsFn' >> beam.ParDo(CleanTweetsFn())
             | 'AnalyzeSentimentFn' >> beam.ParDo(AnalyzeSentimentFn())
-            | 'WriteToBigQuery' >> WriteToBigQuery(args.table_name,
-                args.dataset, twitter_schema))
+            | 'WriteSentimentToBigQuery' >> WriteToBigQuery(args.table_name,
+                args.dataset, twitter_sentiment_schema))
+
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
