@@ -21,6 +21,7 @@ spec:
       containers:
       - name: twitter-stream
         image: coleduclos/twitter-stream:test
+        imagePullPolicy: Always
         volumeMounts:
           - name: twitter
             mountPath: "/.secrets/twitter"

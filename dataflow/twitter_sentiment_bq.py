@@ -138,7 +138,7 @@ class FilterTweetsFn(beam.DoFn):
         super(FilterTweetsFn, self).__init__()
         self.languages_supported = languages_supported
     def process(self, elem):
-        output = [ tweet for tweet in elem if tweet['lang'] in self.languages_supported ]
+        output = [ tweet for tweet in elem if tweet.get('lang', None) in self.languages_supported ]
         yield output
 
 class CleanTweetsFn(beam.DoFn):

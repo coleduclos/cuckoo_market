@@ -8,5 +8,5 @@ COPY twitter_client.py ./
 COPY twitter_stream_listeners.py ./
 COPY twitter_stream_main.py ./
 
-ENTRYPOINT ["python", "twitter_stream_main.py"]
+ENTRYPOINT ["python", "-u", "twitter_stream_main.py"]
 CMD ["--help"]
