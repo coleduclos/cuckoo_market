@@ -5,16 +5,6 @@ from twitter_stream_listeners import PubSubListener
 from twitter_stream_listeners import StdOutListener
 
 stock_map = {
-    'tesla' : {
-        'ticker' : 'TSLA',
-        'filter' : [
-            'TSLA',
-            'Elon Musk',
-            'Tesla',
-            '@elonmusk',
-            'Model 3'
-        ]
-    },
     'amazon' : {
         'ticker' : 'AMZN',
         'filter' : [
@@ -23,6 +13,27 @@ stock_map = {
             'Jeff Bezos',
             '@JeffBezos',
             'AWS'
+        ]
+    },
+    'tesla' : {
+        'ticker' : 'TSLA',
+        'filter' : [
+            'TSLA',
+            'Elon Musk',
+            'Tesla',
+            '@elonmusk',
+            'Model 3',
+            'Model S',
+            'Model X'
+        ]
+    },
+    'facebook' : {
+        'ticker' : 'FB',
+        'filter' : [
+            'FB',
+            'Facebook',
+            'Mark Zuckerberg',
+            '@finkd'
         ]
     }
 }
@@ -77,7 +88,6 @@ def main():
             required=True,
             help='File containing twitter credentials.')
     stream_parser.add_argument('--total_tweets',
-            default=1000,
             type=int,
             help='Total number of tweets to stream.')
     query_parser.set_defaults(func=query)

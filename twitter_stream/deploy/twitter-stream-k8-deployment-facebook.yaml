@@ -1,0 +1,31 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: twitter-stream-deployment-facebook
+  labels:
+    app: twitter-stream
+spec:
+  selector:
+    matchLabels:
+      app: twitter-stream
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: twitter-stream
+    spec:
+      volumes:
+      - name: twitter
+        secret:
+          secretName: twitter
+      containers:
+      - name: twitter-stream
+        image: coleduclos/twitter-stream:test
+        volumeMounts:
+          - name: twitter
+            mountPath: "/.secrets/twitter"
+            readOnly: true
+        args: [ "stream",
+          "--stock", "facebook",
+          "--twitter_creds", "/.secrets/twitter/twitter-credentials.json",
+          "--pubsub_topic", "projects/cuckoo-market-dev/topics/cuckoo-market-dev_twitter_stream_topic"]

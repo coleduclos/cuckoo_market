@@ -1,7 +1,7 @@
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-  name: twitter-stream-deployment
+  name: twitter-stream-deployment-amazon
   labels:
     app: twitter-stream
 spec:
@@ -26,6 +26,6 @@ spec:
             mountPath: "/.secrets/twitter"
             readOnly: true
         args: [ "stream",
-          "--stock", "tesla",
-          "--total_tweets", "100",
-          "--twitter_creds", "/.secrets/twitter/twitter-credentials.json"]
+          "--stock", "amazon",
+          "--twitter_creds", "/.secrets/twitter/twitter-credentials.json",
+          "--pubsub_topic", "projects/cuckoo-market-dev/topics/cuckoo-market-dev_twitter_stream_topic"]

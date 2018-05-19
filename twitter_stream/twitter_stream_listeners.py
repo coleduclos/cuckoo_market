@@ -9,7 +9,7 @@ class PubSubListener(StreamListener):
         batch_size=50,
         label=None,
         num_retries=3,
-        total_tweets=1000):
+        total_tweets=None):
         super()
         self.batch_size = batch_size
         self.count = 0
@@ -26,7 +26,7 @@ class PubSubListener(StreamListener):
             self.write_to_pubsub(self.tweets)
             self.tweets = []
         self.count += 1
-        if self.count >= self.total_tweets:
+        if self.total_tweets and self.count >= self.total_tweets:
             if len(self.tweets) > 0:
                 self.write_to_pubsub(self.tweets)
             return False
@@ -58,7 +58,7 @@ class StdOutListener(StreamListener):
     """
     A listener simply prints to standard out
     """
-    def __init__(self, total_tweets=1000):
+    def __init__(self, total_tweets=None):
         super()
         self.count = 0
         self.total_tweets = total_tweets
@@ -66,7 +66,7 @@ class StdOutListener(StreamListener):
     def on_data(self, data):
         print(data)
         self.count += 1
-        if self.count > self.total_tweets:
+        if self.total_tweets and self.count > self.total_tweets:
             return False
         if (self.count % 1000) == 0:
             print('count is: {} at {}'.format(self.count, datetime.datetime.now()))
