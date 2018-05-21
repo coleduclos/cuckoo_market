@@ -166,13 +166,15 @@ class AnalyzeSentimentFn(beam.DoFn):
 
     def process(self, elem):
         from google.cloud import language
+        from google.api_core import retry
+        language_client = language.LanguageServiceClient()
+        api_retry = retry.Retry(deadline=60)
         try:
-            language_client = language.LanguageServiceClient()
             for tweet in elem:
                 tweet_document = language.types.Document(
                     content=tweet['text'],
                     type=language.enums.Document.Type.PLAIN_TEXT)
-                tweet_annotations = language_client.analyze_sentiment(document=tweet_document)
+                tweet_annotations = language_client.analyze_sentiment(document=tweet_document, retry=api_retry)
                 tweet['sentiment_score'] = tweet_annotations.document_sentiment.score
                 tweet['sentiment_magnitude'] = tweet_annotations.document_sentiment.magnitude
                 print('TWEET: {} \nSCORE: {} | MAGNITUDE: {}'.format(tweet['text'], tweet['sentiment_score'], tweet['sentiment_magnitude']))
