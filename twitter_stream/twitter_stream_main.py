@@ -9,8 +9,8 @@ stock_map = {
         'ticker' : 'AMZN',
         'filter' : [
             'AMZN',
-            'Amazon',
-            'Jeff Bezos',
+            '@amazon',
+            'Bezos',
             '@JeffBezos',
             'AWS'
         ]
@@ -21,19 +21,37 @@ stock_map = {
             'TSLA',
             'Elon Musk',
             'Tesla',
-            '@elonmusk',
-            'Model 3',
-            'Model S',
-            'Model X'
+            '@elonmusk'
         ]
     },
     'facebook' : {
         'ticker' : 'FB',
         'filter' : [
             'FB',
-            'Facebook',
-            'Mark Zuckerberg',
+            '@facebook',
+            'Zuckerberg',
             '@finkd'
+        ]
+    },
+    'zendesk' : {
+        'ticker' : 'ZEN',
+        'filter' : [
+            'ZEN',
+            '@Zendesk',
+            'Mikkel Svane',
+            '@mikkelsvane'
+        ]
+    },
+    'homedepot' : {
+        'ticker' : 'HD',
+        'filter' : [
+            '@HomeDepot'
+        ]
+    },
+    'bostonbeer' : {
+        'ticker' : 'SAM',
+        'filter' : [
+            '@SamuelAdamsBeer'
         ]
     }
 }
