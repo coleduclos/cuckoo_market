@@ -1,0 +1,65 @@
+[
+    {
+        "id": "amazon",
+        "data": {
+            "filter": [
+                "AMZN",
+                "@amazon",
+                "Bezos",
+                "@JeffBezos",
+                "AWS"
+            ]
+        }
+    },
+    {
+        "id": "bostonbeer",
+        "data": {
+            "filter": [
+                "SAM",
+                "@SamuelAdamsBeer"
+            ]
+        }
+    },
+    {
+        "id": "facebook",
+        "data": {
+            "filter": [
+                "FB",
+                "@facebook",
+                "Zuckerberg",
+                "@finkd"
+            ]
+        }
+    },
+    {
+        "id": "homedepot",
+        "data": {
+            "filter": [
+                "HD",
+                "@HomeDepot"
+            ]
+        }
+    },
+    {
+        "id": "tesla",
+        "data": {
+            "filter": [
+                "TSLA",
+                "Elon Musk",
+                "Tesla",
+                "@elonmusk"
+            ]
+        }
+    },
+    {
+        "id": "zendesk",
+        "data": {
+            "filter": [
+                "ZEN",
+                "@Zendesk",
+                "Mikkel Svane",
+                "@mikkelsvane"
+            ]
+        }
+    }
+]

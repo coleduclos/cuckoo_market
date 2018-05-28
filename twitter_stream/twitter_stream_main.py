@@ -1,64 +1,23 @@
 import argparse
 import json
+import sys
+from datastore_client import DatastoreClient
 from twitter_client import TwitterClient
 from twitter_stream_listeners import PubSubListener
 from twitter_stream_listeners import StdOutListener
 
-stock_map = {
-    'amazon' : {
-        'ticker' : 'AMZN',
-        'filter' : [
-            'AMZN',
-            '@amazon',
-            'Bezos',
-            '@JeffBezos',
-            'AWS'
-        ]
-    },
-    'tesla' : {
-        'ticker' : 'TSLA',
-        'filter' : [
-            'TSLA',
-            'Elon Musk',
-            'Tesla',
-            '@elonmusk'
-        ]
-    },
-    'facebook' : {
-        'ticker' : 'FB',
-        'filter' : [
-            'FB',
-            '@facebook',
-            'Zuckerberg',
-            '@finkd'
-        ]
-    },
-    'zendesk' : {
-        'ticker' : 'ZEN',
-        'filter' : [
-            'ZEN',
-            '@Zendesk',
-            'Mikkel Svane',
-            '@mikkelsvane'
-        ]
-    },
-    'homedepot' : {
-        'ticker' : 'HD',
-        'filter' : [
-            '@HomeDepot'
-        ]
-    },
-    'bostonbeer' : {
-        'ticker' : 'SAM',
-        'filter' : [
-            '@SamuelAdamsBeer'
-        ]
-    }
-}
+def get_tweet_filter(id, kind='tweet_filter'):
+    datastore_client = DatastoreClient()
+    response = datastore_client.get_from_id(kind, id)
+    if response:
+        return response.get('filter', [])
+    else:
+        print('ERROR: Could not find tweet filter from Datastore for {}. Exitting...'.format(id))
+        sys.exit(1)
 
 def query(args, listener):
     twitter_client = TwitterClient(creds_file=args.twitter_creds)
-    tweet_filter = stock_map[args.stock.lower()]['filter']
+    tweet_filter = get_tweet_filter(args.stock.lower())
     print('Querying Tweets related to {}... \nUsing filter: {}'.format(args.stock, tweet_filter))
     tweets = twitter_client.query_tweets(tweet_filter=tweet_filter,
         count=args.total_tweets)
@@ -72,7 +31,7 @@ def query(args, listener):
 
 def stream(args, listener):
     twitter_client = TwitterClient(creds_file=args.twitter_creds)
-    tweet_filter = stock_map[args.stock.lower()]['filter']
+    tweet_filter = get_tweet_filter(args.stock.lower())
     print('Streaming Tweets related to {}... \nUsing filter: {}'.format(args.stock, tweet_filter))
     twitter_client.stream_tweets(listener,
         tweet_filter=tweet_filter)
@@ -85,7 +44,6 @@ def main():
     stream_parser = subparsers.add_parser('stream', help='stream help')
     query_parser.add_argument('--stock',
             required=True,
-            choices=stock_map.keys(),
             help='Stock used to filter tweets.')
     query_parser.add_argument('--twitter_creds',
             required=True,
@@ -98,7 +56,6 @@ def main():
             help='The Pub/Sub topic to send queried Tweets to.')
     stream_parser.add_argument('--stock',
             required=True,
-            choices=stock_map.keys(),
             help='Stock used to filter tweets.')
     stream_parser.add_argument('--pubsub_topic',
             help='The Pub/Sub topic to stream Tweets to.')

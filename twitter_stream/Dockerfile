@@ -4,6 +4,7 @@ COPY requirements.txt ./
 
 RUN pip install -r requirements.txt
 
+COPY datastore_client.py ./
 COPY twitter_client.py ./
 COPY twitter_stream_listeners.py ./
 COPY twitter_stream_main.py ./
