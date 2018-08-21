@@ -7,6 +7,7 @@ def run_query(args):
     interest_rate = args.interest_rate
     limit = args.limit
     mortgage_length = args.mortgage_length
+    region_type = args.region_type
     sizerank_max = args.sizerank_max
     payments_per_year = 12
     n = mortgage_length * payments_per_year
@@ -17,17 +18,17 @@ def run_query(args):
 SELECT regionname, state, sizerank, zri, zhvi, down_payment, mortgage_payment,
 (zri - mortgage_payment) as profit
 FROM (
-    SELECT county_zri.regionname AS regionname,
-    county_zri.state as state,
-    county_zri.sizerank as sizerank,
-    county_zri._2018_06 AS zri,
-    county_zhvi._2018_06 AS zhvi,
-    (county_zhvi._2018_06 * {down_payment}) AS down_payment,
-    (county_zhvi._2018_06 * (1 - {down_payment})) / {discount_factor} AS mortgage_payment
-    FROM `cuckoo-market-dev.zillow.county_zri` AS county_zri
-    JOIN `cuckoo-market-dev.zillow.county_zhvi` AS county_zhvi
-    ON county_zri.regionid = county_zhvi.regionid
-    WHERE county_zri.sizerank < {sizerank_max}
+    SELECT {region_type}_zri.regionname AS regionname,
+    {region_type}_zri.state as state,
+    {region_type}_zri.sizerank as sizerank,
+    {region_type}_zri._2018_06 AS zri,
+    {region_type}_zhvi._2018_06 AS zhvi,
+    ({region_type}_zhvi._2018_06 * {down_payment}) AS down_payment,
+    ({region_type}_zhvi._2018_06 * (1 - {down_payment})) / {discount_factor} AS mortgage_payment
+    FROM `cuckoo-market-dev.zillow.{region_type}_zri` AS {region_type}_zri
+    JOIN `cuckoo-market-dev.zillow.{region_type}_zhvi` AS {region_type}_zhvi
+    ON {region_type}_zri.regionid = {region_type}_zhvi.regionid
+    WHERE {region_type}_zri.sizerank < {sizerank_max}
 )
 WHERE down_payment < {down_payment_max}
 ORDER BY profit DESC
@@ -57,6 +58,10 @@ def main():
     parser.add_argument('--mortgage_length',
             default=30,
             help='The total length of the mortgage in years.')
+    parser.add_argument('--region_type',
+            default='county',
+            choices=['county','neighborhood'],
+            help='The region type used to run the query.')
     parser.add_argument('--sizerank_max',
             default=400,
             help='The size rank of the geographical region used to filter results.')
