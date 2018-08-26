@@ -10,6 +10,7 @@ def run_query(args):
     region_type = args.region_type
     sizerank_max = args.sizerank_max
     payments_per_year = 12
+    property_type = args.property_type
     n = mortgage_length * payments_per_year
     i = interest_rate / payments_per_year
     discount_factor =  ((1 + i)**n - 1) / (i * (1 + i)**n)
@@ -18,17 +19,17 @@ def run_query(args):
 SELECT regionname, state, sizerank, zri, zhvi, down_payment, mortgage_payment,
 (zri - mortgage_payment) as profit
 FROM (
-    SELECT {region_type}_zri.regionname AS regionname,
-    {region_type}_zri.state as state,
-    {region_type}_zri.sizerank as sizerank,
-    {region_type}_zri._2018_06 AS zri,
-    {region_type}_zhvi._2018_06 AS zhvi,
-    ({region_type}_zhvi._2018_06 * {down_payment}) AS down_payment,
-    ({region_type}_zhvi._2018_06 * (1 - {down_payment})) / {discount_factor} AS mortgage_payment
-    FROM `cuckoo-market-dev.zillow.{region_type}_zri` AS {region_type}_zri
-    JOIN `cuckoo-market-dev.zillow.{region_type}_zhvi` AS {region_type}_zhvi
-    ON {region_type}_zri.regionid = {region_type}_zhvi.regionid
-    WHERE {region_type}_zri.sizerank < {sizerank_max}
+    SELECT {region_type}_zri_{property_type}.regionname AS regionname,
+    {region_type}_zri_{property_type}.state as state,
+    {region_type}_zri_{property_type}.sizerank as sizerank,
+    {region_type}_zri_{property_type}._2018_06 AS zri,
+    {region_type}_zhvi_{property_type}._2018_06 AS zhvi,
+    ({region_type}_zhvi_{property_type}._2018_06 * {down_payment}) AS down_payment,
+    ({region_type}_zhvi_{property_type}._2018_06 * (1 - {down_payment})) / {discount_factor} AS mortgage_payment
+    FROM `cuckoo-market-dev.zillow.{region_type}_zri_{property_type}` AS {region_type}_zri_{property_type}
+    JOIN `cuckoo-market-dev.zillow.{region_type}_zhvi_{property_type}` AS {region_type}_zhvi_{property_type}
+    ON {region_type}_zri_{property_type}.regionid = {region_type}_zhvi_{property_type}.regionid
+    WHERE {region_type}_zri_{property_type}.sizerank < {sizerank_max}
 )
 WHERE down_payment < {down_payment_max}
 ORDER BY profit DESC
@@ -57,6 +58,10 @@ def main():
             help='Limit the number of results returned.')
     parser.add_argument('--mortgage_length',
             default=30,
+            help='The total length of the mortgage in years.')
+    parser.add_argument('--property_type',
+            default='all',
+            choices=['all','condo','sfr'],
             help='The total length of the mortgage in years.')
     parser.add_argument('--region_type',
             default='county',
